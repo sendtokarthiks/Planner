@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration monitorInterval="5">
+       <properties>
+              <property name="log4j2.logfile">planner</property>
+              <property name="logfile">${sys:log4j2.logfile}</property>
+       </properties>
+  <appenders>
+    <RollingFile name="Default" fileName="log/${logfile}.log"
+                 filePattern="log/${logfile}-%i.log">
+      <!-- PatternLayout charset="UTF-8" pattern="%d %-5p [%t] %c %m [%M:%L %X] %n"/-->
+      <PatternLayout charset="UTF-8" pattern="%m%n"/>
+      <Policies>
+        <OnStartupTriggeringPolicy/>
+      </Policies>
+      <DefaultRolloverStrategy max="1"/>
+    </RollingFile>
+    <Console name="Console">
+      <PatternLayout charset="UTF-8" pattern="%m%n"/>
+    </Console>
+  </appenders>
+  <loggers>
+    <logger name="com.planning" level="info" additivity="false">
+      <appender-ref ref="Console"/>
+    </logger>
+    <root level="debug">
+      <appender-ref ref="Console"/>
+    </root>
+  </loggers>
+</configuration>

@@ -1,0 +1,27 @@
+[
+{
+    "part" : "P-WH",
+    "type" : "INV",
+    "quantity": 10
+}, {
+    "part" : "C1-INT1",
+    "type" : "INV",
+    "quantity": 30
+}, {
+    "part" : "C2-INT1",
+    "type" : "INV",
+    "quantity": 30
+}, {
+    "part" : "R1-SUP",
+    "type" : "INV",
+    "quantity": 2147483647
+}, {
+    "part" : "R2-SUP",
+    "type" : "INV",
+    "quantity": 2147483647
+}, {
+    "part" : "R3-SUP",
+    "type" : "INV",
+    "quantity": 2147483647
+}
+]

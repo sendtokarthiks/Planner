@@ -33,7 +33,7 @@ public class PlanningEngineImpl implements PlanningEngine {
 	}
 
 	@Override
-	public void performPlanning(PlannerContext plannerContext) {
+	public void plan(PlannerContext plannerContext) {
 		for (Demand demand : plannerContext.getDemands()) {
 			LOGGER.info(String.format("Planning demand %1s , Qty : %2s", demand.getOrderNumber(), demand.getQuantity()));
 			int committedQty = StrategyExecutor.executeStrategy(plannerContext, null, demand.getPart() + "-BOM1",

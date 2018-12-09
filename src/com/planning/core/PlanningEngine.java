@@ -18,7 +18,7 @@ public interface PlanningEngine {
 	 * This method is used to plan demands.
 	 * @param plannerContext
 	 */
-	void performPlanning(PlannerContext plannerContext);
+	void plan(PlannerContext plannerContext);
 	/**
 	 * This method is used to export demand plans.
 	 * @param plannerContext

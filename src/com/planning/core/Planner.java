@@ -18,7 +18,7 @@ public class Planner {
 		PlanningEngine planningEngine = context.getBean(PlanningEngine.class);
 		PlannerContext plannerContext = context.getBean(PlannerContext.class);
 		planningEngine.importData(plannerContext);
-		planningEngine.performPlanning(plannerContext);
+		planningEngine.plan(plannerContext);
 		planningEngine.exportPlanData(plannerContext);
 
 		context.close();

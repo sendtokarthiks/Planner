@@ -36,13 +36,31 @@ public class PlanningEngineImpl implements PlanningEngine {
 	public void performPlanning(PlannerContext plannerContext) {
 		for (Demand demand : plannerContext.getDemands()) {
 			LOGGER.info(String.format("Planning demand %1s , Qty : %2s", demand.getOrderNumber(), demand.getQuantity()));
-			StrategyExecutor.executeStrategy(plannerContext, null, demand.getPart() + "-BOM1",
+			int committedQty = StrategyExecutor.executeStrategy(plannerContext, null, demand.getPart() + "-BOM1",
 			                demand.getPart(), demand.getQuantity(), null, false);
 
-			createDemandPlansAndUpdateDemandStatus(demand, plannerContext);
+			createDemandPlans(demand, plannerContext);
+			updateDemandStatus(committedQty, demand.getQuantity(), demand);
 			LOGGER.info(String.format("Demand : %1s, Status : %2s", demand.getOrderNumber(), demand.getStatus()));
 		}
 		LOGGER.info("Planning Complete..");
+	}
+
+	/**
+	 * This method is used to update demand status based on committed qty.
+	 * @param committedQty
+	 * @param requestedQty
+	 * @param demand
+	 */
+	private void updateDemandStatus(int committedQty, int requestedQty, Demand demand) {
+		String demandStatus = Constants.DEMAND_STATUS_UNMET;
+
+		if (requestedQty == committedQty) {
+			demandStatus = Constants.DEMAND_STATUS_MET;
+		} else if (committedQty > 0) {
+			demandStatus = Constants.DEMAND_STATUS_SHORT;
+		}
+		demand.setStatus(demandStatus);
 	}
 
 	/**
@@ -50,7 +68,7 @@ public class PlanningEngineImpl implements PlanningEngine {
 	 * @param demand
 	 * @param plannerContext
 	 */
-	private void createDemandPlansAndUpdateDemandStatus(Demand demand, PlannerContext plannerContext) {
+	private void createDemandPlans(Demand demand, PlannerContext plannerContext) {
 		Map<String, Map<String, PlanPath>> allPlanPaths = plannerContext.getPlanPaths();
 		Iterator<String> skuPlanPathIterator = allPlanPaths.keySet().iterator();
 		int planSequenceNumber = 1;
@@ -66,15 +84,6 @@ public class PlanningEngineImpl implements PlanningEngine {
 				demandPlan.setRequestedQty(planPath.getRequestedQty());
 				demandPlan.setQuantity(planPath.getCommittedQty());
 				plannerContext.addDemandPlan(demandPlan);
-				if (!planPath.getPart().equals(demand.getPart())
-				                && !planPath.getRequestedQty().equals(planPath.getCommittedQty())) {
-					//Ignore the demand part as most probably the first request will have different request and commit qty
-					demandStatus = Constants.DEMAND_STATUS_SHORT;
-				}
-				if (!demandStatus.equals(Constants.DEMAND_STATUS_SHORT)
-				                && planPath.getRequestedQty().equals(planPath.getCommittedQty())) {
-					demandStatus = Constants.DEMAND_STATUS_MET;
-				}
 			}
 		}
 		demand.setStatus(demandStatus);

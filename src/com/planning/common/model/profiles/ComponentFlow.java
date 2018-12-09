@@ -35,7 +35,16 @@ public class ComponentFlow implements Entity {
 	public void addComponent(String part, Double productionFactor) {
 		components.put(part, productionFactor);
 	}
+	
+	public Integer getMaximumComponentQty() {
+		return maximumComponentQty;
+	}
+
+	public void setMaximumComponentQty(Integer maximumComponentQty) {
+		this.maximumComponentQty = maximumComponentQty;
+	}
 
 	private String bomNumber;
+	private Integer maximumComponentQty;
 	private final Map<String, Double> components;
 }

@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.planning.common.Constants;
 import com.planning.common.context.PlannerContext;
 import com.planning.common.model.input.Supply;
 import com.planning.common.model.profiles.ComponentFlow;
@@ -24,7 +23,7 @@ public class ComponentStockPathStrategy implements PlannerStrategy {
 
 	@Override
 	public Integer execute(PlannerContext plannerContext, String part, String bomNumber, Integer requestedQty,
-	                boolean searchOnly) {
+	                boolean findMaxAvailableQty) {
 
 		Network network = plannerContext.getNetwork(part);
 		int committedQty = 0;
@@ -37,22 +36,21 @@ public class ComponentStockPathStrategy implements PlannerStrategy {
 				Map<String, Double> components = componentFlow.getComponents();
 				Iterator<String> componentsIterator = components.keySet().iterator();
 				int minimumAvailableStockQty = getMinimumAvailableStockQty(plannerContext, components, componentsIterator);
-				int componentCommittedQty = commitStock(plannerContext, bomNumber, requestedQty, searchOnly, components,
+				int componentCommittedQty = commitStock(plannerContext, bomNumber, requestedQty, findMaxAvailableQty, components,
 				                minimumAvailableStockQty);
 				committedQty += componentCommittedQty;
-				if (committedQty == requestedQty) {
+				if (committedQty >= requestedQty) {
 					break; // we have enough inventory.
 				}
 			}
 		}
-		if (!searchOnly) {
-			LOGGER.debug(String.format("Component Stock Path Strategy : Part - %1s, Requested - %2s, Committed - %3s", part,
-			                requestedQty, committedQty));
-		}
-		if (committedQty < requestedQty) {
+		LOGGER.debug((findMaxAvailableQty ? "Searching - " : "") + String.format("Component Stock Path Strategy : Part - %1s, Requested - %2s, Available/Committed - %3s", part,
+		                requestedQty, committedQty));
+
+		if (findMaxAvailableQty || committedQty < requestedQty) {
 			int shortQty = requestedQty - committedQty;
-			committedQty = StrategyExecutor.executeStrategy(plannerContext, CURRENT_STRATEGY, bomNumber, part, shortQty,
-			                null, searchOnly);
+			committedQty += StrategyExecutor.executeStrategy(plannerContext, CURRENT_STRATEGY, bomNumber, part, shortQty,
+			                null, findMaxAvailableQty);
 		}
 
 		return committedQty;
@@ -63,17 +61,17 @@ public class ComponentStockPathStrategy implements PlannerStrategy {
 	 * @param plannerContext
 	 * @param bomNumber
 	 * @param requestedQty
-	 * @param searchOnly
+	 * @param findMaxAvailableQty
 	 * @param componentFlow
 	 * @param components
 	 * @param minimumAvailableStockQty
 	 * @return
 	 */
-	private int commitStock(PlannerContext plannerContext, String bomNumber, Integer requestedQty, boolean searchOnly,
+	private int commitStock(PlannerContext plannerContext, String bomNumber, Integer requestedQty, boolean findMaxAvailableQty,
 	                Map<String, Double> components, int minimumAvailableStockQty) {
 		int componentCommittedQty = 0;
 		if (minimumAvailableStockQty > 0) {
-			if (requestedQty < minimumAvailableStockQty) {
+			if (!findMaxAvailableQty && requestedQty < minimumAvailableStockQty) {
 				// Do not request more than what is needed.
 				minimumAvailableStockQty = requestedQty;
 			}
@@ -84,7 +82,7 @@ public class ComponentStockPathStrategy implements PlannerStrategy {
 				Double productionFactor = components.get(componentPart);
 				Integer componentRequestQty = minimumAvailableStockQty * productionFactor.intValue();
 				componentCommittedQty = StrategyExecutor.executeStrategy(plannerContext, CURRENT_STRATEGY, bomNumber,
-				                componentPart, componentRequestQty, PlannerStrategy.STOCKPATH_STRATEGY, searchOnly);
+				                componentPart, componentRequestQty, PlannerStrategy.STOCKPATH_STRATEGY, findMaxAvailableQty);
 				componentCommittedQty = (int) (componentCommittedQty/ productionFactor);
 			}
 		}
@@ -104,7 +102,7 @@ public class ComponentStockPathStrategy implements PlannerStrategy {
 		while (componentsIterator.hasNext()) {
 			String componentPart = componentsIterator.next();
 			Double productionFactor = components.get(componentPart);
-			Integer componentStockQty = getStockQuantity(plannerContext.getInventoryProfile(componentPart), true);
+			Integer componentStockQty = getStockQuantity(plannerContext.getInventoryProfile(componentPart));
 			componentStockQty = (int) (componentStockQty / productionFactor);
 
 			if (componentStockQty == 0) {
@@ -121,20 +119,13 @@ public class ComponentStockPathStrategy implements PlannerStrategy {
 	/**
 	 * Get stock quantity based on inventory profile.
 	 * @param supplies
-	 * @param ignoreSupplies
 	 * @return
 	 */
-	private Integer getStockQuantity(List<Supply> supplies, boolean ignoreSupplies) {
+	private Integer getStockQuantity(List<Supply> supplies) {
 		int availableQty = 0;
 		if (supplies != null && !supplies.isEmpty()) {
 			for (Supply supply : supplies) {
-				if (ignoreSupplies) {
-					if (supply.getType().equals(Constants.STOCK_INVENTORY_TYPE)) {
-						availableQty += supply.getQuantity() - supply.getCommittedQty();
-					}
-				} else {
-					availableQty += supply.getQuantity() - supply.getCommittedQty();
-				}
+				availableQty += supply.getQuantity() - supply.getCommittedQty();
 			}
 		}
 		return availableQty;

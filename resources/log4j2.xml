@@ -19,7 +19,7 @@
     </Console>
   </appenders>
   <loggers>
-    <logger name="com.planning" level="info" additivity="false">
+    <logger name="com.planning" level="debug" additivity="false">
       <appender-ref ref="Console"/>
     </logger>
     <root level="debug">

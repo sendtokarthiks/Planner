@@ -20,35 +20,40 @@ public class StockPathStrategy implements PlannerStrategy {
 	private final Logger LOGGER = LogManager.getLogger(StockPathStrategy.class);
 
 	@Override
-	public Integer execute(PlannerContext plannerContext, String part, String bomNumber, Integer requestedQty, boolean searchOnly) {
+	public Integer execute(PlannerContext plannerContext, String part, String bomNumber, Integer requestedQty, boolean findMaxAvailableQty) {
 		List<Supply> supplies = plannerContext.getInventoryProfile(part);
 		Network network = plannerContext.getNetwork(part);
 		int committedQty = 0;
+		int availableQty = 0;
 		if (requestedQty > 0) {
 			if (supplies != null && !supplies.isEmpty()) {
-				int availableQty = supplies.stream().mapToInt(supply -> supply.getQuantity() - supply.getCommittedQty()).sum();
-				if (availableQty > 0) {
+				availableQty = supplies.stream().mapToInt(supply -> supply.getQuantity() - supply.getCommittedQty()).sum();
+				if (findMaxAvailableQty) {
+					committedQty = availableQty;
+				} else if (availableQty > 0) {
 					if (availableQty >= requestedQty) {
 						committedQty = requestedQty;
 					} else {
 						committedQty = availableQty;
 					}
-					if (!searchOnly) {
-						supplies.get(0).setCommittedQty(committedQty);
-						PlanPath planPath = new PlanPath(part, requestedQty, committedQty, null);
-						plannerContext.addPlanPath(bomNumber, planPath);
-					}
+					supplies.get(0).setCommittedQty(committedQty);
+					PlanPath planPath = new PlanPath(part, requestedQty, committedQty, null);
+					plannerContext.addPlanPath(bomNumber, planPath);
 				}
 			}
-			if (!searchOnly) {
-				LOGGER.info(String.format("Stock Path Strategy : Part - %1s, Requested - %2s, Committed - %3s", part,
+
+			if (findMaxAvailableQty) {
+				LOGGER.debug("Searching - " + String.format("Stock Path Strategy : Part - %1s, Requested - %2s, Available - %3s, Committed - %4s", part,
+				                requestedQty, availableQty, committedQty));
+			} else {
+				LOGGER.info(String.format("Part - %1s, Requested - %2s, Committed - %4s", part,
 				                requestedQty, committedQty));
 			}
 		
-			if (network != null && committedQty < requestedQty) {
+			if (network != null && (findMaxAvailableQty || committedQty < requestedQty)) {
 				int shortQty = requestedQty - committedQty;
-				committedQty = StrategyExecutor.executeStrategy(plannerContext, CURRENT_STRATEGY, bomNumber, part, shortQty, null,
-								searchOnly);
+				committedQty += StrategyExecutor.executeStrategy(plannerContext, CURRENT_STRATEGY, bomNumber, part, shortQty, null,
+								findMaxAvailableQty);
 			}
 		}
 

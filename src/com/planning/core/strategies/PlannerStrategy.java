@@ -13,5 +13,5 @@ public interface PlannerStrategy {
 	public static final String ALTERNATEPATH_STRATEGY = "ALTERNATEFLOWPATH";
 	public static final String MAXSTOCKPATH_STRATEGY = "MAXSTOCKPATH";
 
-	public Integer execute(PlannerContext plannerContext, String part, String bomNumber, Integer requestedQty, boolean searchOnly);
+	public Integer execute(PlannerContext plannerContext, String part, String bomNumber, Integer requestedQty, boolean findMaxAvailableQty);
 }

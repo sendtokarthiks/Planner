@@ -26,8 +26,6 @@ public class BillOfMaterials implements Entity, Comparable<BillOfMaterials> {
 	private Integer sequenceNumber;
 	@JsonProperty("component")
 	private String component;
-	@JsonProperty("priority")
-	private Integer bomPriority;
 
 	@JsonProperty("bomNumber")
 	public String getBomNumber() {
@@ -78,15 +76,6 @@ public class BillOfMaterials implements Entity, Comparable<BillOfMaterials> {
 	public void setComponent(String component) {
 		this.component = component;
 	}
-	@JsonProperty("priority")
-	public Integer getBomPriority() {
-		return bomPriority;
-	}
-	@JsonProperty("priority")
-	public void setBomPriority(Integer bomPriority) {
-		this.bomPriority = bomPriority;
-	}
-
 
 	@Override
 	public String getId() {
@@ -103,11 +92,6 @@ public class BillOfMaterials implements Entity, Comparable<BillOfMaterials> {
 			return diff;
 		}
 
-		diff = bomPriority.compareTo(compareBom.getBomPriority());
-		if(diff != 0) {
-			return diff;
-		}
-		
 		bomSortOrder = ComparatorUtils.getSortOrder(bomNumber);
 		compareBomSortOrder = ComparatorUtils.getSortOrder(compareBom.getBomNumber());
 		diff = bomSortOrder - compareBomSortOrder;

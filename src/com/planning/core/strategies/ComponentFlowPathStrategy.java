@@ -21,7 +21,7 @@ public class ComponentFlowPathStrategy implements PlannerStrategy {
 	
 	@Override
 	public Integer execute(PlannerContext plannerContext, String part, String bomNumber, Integer requestedQty,
-	                boolean searchOnly) {
+	                boolean findMaxAvailableQty) {
 
 		Network network = plannerContext.getNetwork(part);
 		int committedQty = 0;
@@ -31,16 +31,14 @@ public class ComponentFlowPathStrategy implements PlannerStrategy {
 			while (componentFlowMapIterator.hasNext()) {
 				String componentBomNumber = componentFlowMapIterator.next();
 				ComponentFlow componentFlow = network.getComponentFlow(componentBomNumber);
-				committedQty += executeComponentFlow(plannerContext, componentFlow, requestedQty, searchOnly);
+				committedQty += executeComponentFlow(plannerContext, componentFlow, requestedQty, findMaxAvailableQty);
 				if (committedQty == requestedQty) {
 					break;
 				}
 			}
 		}
-		if (!searchOnly) {
-			LOGGER.debug(String.format("Component Flow Path Strategy : Part - %1s, Requested - %2s, Committed - %3s", part,
-			                requestedQty, committedQty));
-		}
+		LOGGER.debug((findMaxAvailableQty ? "Searching - " : "") + String.format("Component Flow Path Strategy : Part - %1s, Requested - %2s, Committed - %3s", part,
+		                requestedQty, committedQty));
 
 		return committedQty;
 	}
@@ -62,22 +60,29 @@ public class ComponentFlowPathStrategy implements PlannerStrategy {
 	                Integer requestedQty, boolean searchMode) {
 		String bomNumber = componentFlow.getBomNumber();
 		Map<String, Double> componentFlows = componentFlow.getComponents();
-		int minAvailableQty = getMinimumAvailableQty(plannerContext, bomNumber, requestedQty,
-		                componentFlows);
+		int maxAvailableQty = getMaximumAvailableQty(plannerContext, bomNumber, requestedQty,
+		                componentFlow);
 		int committedQty = 0;
+		double productionFactor = 1;
 
-		if (minAvailableQty > 0) {
+		if (maxAvailableQty > 0) {
+			if (!searchMode) {
+				requestedQty = Math.min(maxAvailableQty, requestedQty);
+			}
 			Iterator<String> componentIterator = componentFlows.keySet().iterator();
 			while (componentIterator.hasNext()) {
 				String componentPart = componentIterator.next();
-				double productionFactor = componentFlows.get(componentPart).doubleValue();
-				int componentRequestQty = (int) Math.round(minAvailableQty * productionFactor);
+				productionFactor = componentFlows.get(componentPart).doubleValue();
+				int componentRequestQty = (int) Math.round(requestedQty * productionFactor);
 
 				committedQty = StrategyExecutor.executeStrategy(plannerContext, CURRENT_STRATEGY,
 				                bomNumber, componentPart, componentRequestQty, null, searchMode);
 				if (committedQty == 0) {
 					break;
 				}
+			}
+			if (!searchMode) {
+				componentFlow.setMaximumComponentQty(maxAvailableQty - (int) (committedQty / productionFactor));
 			}
 		}
 		return committedQty;
@@ -93,9 +98,27 @@ public class ComponentFlowPathStrategy implements PlannerStrategy {
 	 * @param componentFlows
 	 * @return
 	 */
-	private int getMinimumAvailableQty(PlannerContext plannerContext, String bomNumber, Integer requestedQty, Map<String, Double> componentFlows) {
+	private int getMaximumAvailableQty(PlannerContext plannerContext, String bomNumber, Integer requestedQty, ComponentFlow componentFlow) {
+		if (componentFlow.getMaximumComponentQty() != null) {
+			return componentFlow.getMaximumComponentQty();
+		} else {
+			return calculateMaximumComponentQty(plannerContext, bomNumber, requestedQty, componentFlow);
+		}
+	}
+
+	/**
+	 * This method is used to get maximum qty that can be satisfied for a list of components. (AND)
+	 * @param plannerContext
+	 * @param bomNumber
+	 * @param requestedQty
+	 * @param componentFlow
+	 * @return
+	 */
+	private int calculateMaximumComponentQty(PlannerContext plannerContext, String bomNumber, Integer requestedQty,
+	                ComponentFlow componentFlow) {
+		Map<String, Double> componentFlows = componentFlow.getComponents();
 		Iterator<String> componentIterator = componentFlows.keySet().iterator();
-		Integer minCommittedQty = Integer.MAX_VALUE;
+		Integer maxAvailableQty = Integer.MAX_VALUE;
 		int committedQty = 0;
 		while (componentIterator.hasNext()) {
 			String componentPart = componentIterator.next();
@@ -105,16 +128,14 @@ public class ComponentFlowPathStrategy implements PlannerStrategy {
 			                bomNumber, componentPart, componentRequestQty, null, true);
 			if (committedQty == 0) { // Do not proceed further as we have a
 			                         // component having 0 inventory.
-				minCommittedQty = 0;
+				maxAvailableQty = 0;
 				break;
-			} else if (committedQty < minCommittedQty) {
-				minCommittedQty = (int) (committedQty / productionFactor);
 			}
-			
-			LOGGER.debug(String.format("Minimum Qty for Component : Part - %1s, Min Qty - %2s, Committed Qty - %3s ", componentPart,
-							minCommittedQty, committedQty));
+			LOGGER.debug(String.format("Maximum Qty for Component : Part - %1s, Max Qty - %2s, Available Qty - %3s ", componentPart,
+							maxAvailableQty, committedQty));
 		}
+		componentFlow.setMaximumComponentQty(maxAvailableQty);
 		
-		return Math.min(minCommittedQty, committedQty);
+		return Math.min(maxAvailableQty, committedQty);
 	}
 }

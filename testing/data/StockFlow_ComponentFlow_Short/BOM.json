@@ -1,0 +1,37 @@
+[{
+    "bomNumber": "B1",
+    "part" : "P-WH",
+    "productionFactor": 2,
+    "sequenceNumber": 1,
+    "component": "C1-INT1"
+}, {
+    "bomNumber": "B1",
+    "part" : "P-WH",
+    "productionFactor": 2,
+    "sequenceNumber": 1,
+    "component": "C2-INT1"
+}, {
+    "bomNumber": "B2",
+    "part" : "C1-INT1",
+    "productionFactor": 1,
+    "sequenceNumber": 1,
+    "component": "R1-SUP"
+}, {
+    "bomNumber": "B2",
+    "part" : "C1-INT1",
+    "productionFactor": 1,
+    "sequenceNumber": 2,
+    "component": "R2-SUP"
+}, {
+    "bomNumber": "B3",
+    "part" : "C1-INT1",
+    "productionFactor": 1,
+    "sequenceNumber": 1,
+    "component": "R3-SUP"
+}, {
+    "bomNumber": "B4",
+    "part" : "C2-INT1",
+    "productionFactor": 0.5,
+    "sequenceNumber": 1,
+    "component": "R3-SUP"
+}]

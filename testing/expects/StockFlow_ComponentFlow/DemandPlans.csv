@@ -1,0 +1,10 @@
+orderNumber,part,planSequenceNumber,quantity,requestedQty,scheduledDate
+ORD1,R3-SUP,1,75,75,
+ORD1,C2-INT1,2,30,30,
+ORD1,C1-INT1,3,30,30,
+ORD1,P-WH,4,10,100,
+ORD1,R2-SUP,5,150,150,
+ORD1,R1-SUP,6,150,150,
+ORD2,R3-SUP,1,50,50,
+ORD2,R2-SUP,2,100,100,
+ORD2,R1-SUP,3,100,100,

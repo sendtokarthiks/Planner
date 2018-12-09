@@ -1,0 +1,15 @@
+[
+{
+    "part" : "P-WH",
+    "type" : "INV",
+    "quantity": 20
+}, {
+    "part" : "C2-D1",
+    "type" : "INV",
+    "quantity": 10
+}, {
+    "part" : "SUPP-D1",
+    "type" : "INV",
+    "quantity": 2147483646
+}
+]
